@@ -1129,40 +1129,39 @@ const ambSounds={};
 const ambNodes={};
 
 const AMBIENT_URLS = {
-  rain: 'https://assets.mixkit.co/sfx/preview/mixkit-light-rain-loop-1253.mp3',
-  cafe: 'https://assets.mixkit.co/sfx/preview/mixkit-restaurant-crowd-talking-ambiance-444.mp3',
-  fire: 'https://assets.mixkit.co/sfx/preview/mixkit-campfire-crackles-1330.mp3',
-  forest: 'https://assets.mixkit.co/sfx/preview/mixkit-forest-birds-ambience-1210.mp3',
+  rain: 'https://www.youtube.com/embed/mPZkdNFkNps?autoplay=1&loop=1&playlist=mPZkdNFkNps',
+  cafe: 'https://www.youtube.com/embed/gaGrHbdRgNU?autoplay=1&loop=1&playlist=gaGrHbdRgNU',
+  fire: 'https://www.youtube.com/embed/UgHKb_7884o?autoplay=1&loop=1&playlist=UgHKb_7884o',
+  forest: 'https://www.youtube.com/embed/xNN7iTA57jM?autoplay=1&loop=1&playlist=xNN7iTA57jM',
 };
 
 function toggleAmb(type){
   const btn=document.querySelector(`#amb-${type} button`);
   if(ambSounds[type]){
-    ambSounds[type].pause();
-    ambSounds[type].currentTime=0;
+    ambSounds[type].remove();
     delete ambSounds[type];
     btn.textContent='▶ Play';
     btn.classList.remove('primary');
     return;
   }
-  const audio=new Audio(AMBIENT_URLS[type]);
-  audio.loop=true;
-  const slider=document.querySelector(`#amb-${type} input`);
-  audio.volume=(slider?slider.value/100:0.5);
-  audio.play();
-  ambSounds[type]=audio;
+  const iframe=document.createElement('iframe');
+  iframe.src=AMBIENT_URLS[type];
+  iframe.style.cssText='display:none;width:0;height:0;border:none;position:absolute';
+  iframe.allow='autoplay';
+  document.body.appendChild(iframe);
+  ambSounds[type]=iframe;
   btn.textContent='⏹ Stop';
   btn.classList.add('primary');
 }
 
-function setAmbVol(type,val){
-  if(ambSounds[type]) ambSounds[type].volume=val/100;
-}
+
+function setAmbVol(type,val){}
 
 init();
 </script>
 <script src="bloque3.js"></script>
 </body>
 </html>
+
 
 
