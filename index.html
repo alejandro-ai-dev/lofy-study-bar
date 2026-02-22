@@ -385,7 +385,41 @@ body.grad{background:linear-gradient(-45deg,#0d0d1a,#130d2a,#0a0d1f,#12091e);bac
         </div>
 
         <!-- REPRODUCTOR -->
-        <div class="widget" id="w-player" draggable="true">
+        <!-- SONIDOS AMBIENTALES -->
+<div class="widget" id="w-ambient" draggable="true">
+  <div class="widget-header"><span class="widget-title">🌧 Ambiente</span><button class="widget-close" onclick="hideW('w-ambient')">✕</button></div>
+  <div style="display:flex;flex-direction:column;gap:10px" id="ambient-controls">
+    <div class="amb-row" id="amb-rain">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:0.85rem">🌧 Lluvia</span>
+        <button class="pomo-btn" style="padding:4px 10px;font-size:0.75rem" onclick="toggleAmb('rain')">▶ Play</button>
+      </div>
+      <input type="range" min="0" max="100" value="50" oninput="setAmbVol('rain',this.value)">
+    </div>
+    <div class="amb-row" id="amb-cafe">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:0.85rem">☕ Café</span>
+        <button class="pomo-btn" style="padding:4px 10px;font-size:0.75rem" onclick="toggleAmb('cafe')">▶ Play</button>
+      </div>
+      <input type="range" min="0" max="100" value="50" oninput="setAmbVol('cafe',this.value)">
+    </div>
+    <div class="amb-row" id="amb-fire">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:0.85rem">🔥 Chimenea</span>
+        <button class="pomo-btn" style="padding:4px 10px;font-size:0.75rem" onclick="toggleAmb('fire')">▶ Play</button>
+      </div>
+      <input type="range" min="0" max="100" value="50" oninput="setAmbVol('fire',this.value)">
+    </div>
+    <div class="amb-row" id="amb-forest">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:0.85rem">🌲 Bosque</span>
+        <button class="pomo-btn" style="padding:4px 10px;font-size:0.75rem" onclick="toggleAmb('forest')">▶ Play</button>
+      </div>
+      <input type="range" min="0" max="100" value="50" oninput="setAmbVol('forest',this.value)">
+    </div>
+  </div>
+</div>
+<div class="widget" id="w-player" draggable="true">
           <div class="widget-header"><span class="widget-title">🎵 Playlists Lofi</span><button class="widget-close" onclick="hideW('w-player')">✕</button></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
             <button class="pomo-btn" onclick="openPL('https://youtube.com/results?search_query=lofi+hip+hop+radio+study')">🎵 Lo-fi Hip Hop</button>
@@ -693,6 +727,7 @@ function parseMSInput(val){
   if(val.includes(':')){const[m,s]=val.split(':').map(Number);return(m||0)*60+(s||0)}
   return parseInt(val)*60||0;
 }
+
 let pomoTmr=null,pomoRun=false,pomoBreak=false,pomoSess=0;
 let pomoTot=25*60,pomoRem=25*60;
 function pomoAct(){
@@ -1086,6 +1121,89 @@ if(compactOn){
 
   // Onboarding
   if(!ld('onboarded'))setTimeout(startOB,900);
+}
+// ============================
+// SONIDOS AMBIENTALES
+// ============================
+const ambSounds={};
+const ambNodes={};
+
+function getACtx(){
+  if(!aCtx)aCtx=new(window.AudioContext||window.webkitAudioContext)();
+  return aCtx;
+}
+
+function createNoise(type){
+  const ctx=getACtx();
+  const bufSize=ctx.sampleRate*2;
+  const buf=ctx.createBuffer(1,bufSize,ctx.sampleRate);
+  const data=buf.getChannelData(0);
+  
+  if(type==='rain'){
+    for(let i=0;i<bufSize;i++)data[i]=(Math.random()*2-1)*0.8;
+  } else if(type==='cafe'){
+    let b0=0;
+    for(let i=0;i<bufSize;i++){b0=0.99*b0+0.01*(Math.random()*2-1);data[i]=b0*3.5;}
+  } else if(type==='fire'){
+    let b=0;
+    for(let i=0;i<bufSize;i++){b=0.995*b+0.005*(Math.random()*2-1);data[i]=b*4;}
+  } else if(type==='forest'){
+    for(let i=0;i<bufSize;i++)data[i]=(Math.random()*2-1)*0.3;
+  }
+  return buf;
+}
+
+function getFilter(type){
+  const ctx=getACtx();
+  const f=ctx.createBiquadFilter();
+  if(type==='rain'){f.type='highpass';f.frequency.value=400;}
+  else if(type==='cafe'){f.type='lowpass';f.frequency.value=800;}
+  else if(type==='fire'){f.type='lowpass';f.frequency.value=300;}
+  else if(type==='forest'){f.type='bandpass';f.frequency.value=600;f.Q.value=0.5;}
+  return f;
+}
+
+function toggleAmb(type){
+  const ctx=getACtx();
+  if(ctx.state==='suspended')ctx.resume();
+  
+  const btn=document.querySelector(`#amb-${type} button`);
+  
+  if(ambSounds[type]){
+    ambSounds[type].stop();
+    ambNodes[type].gain.setValueAtTime(0,ctx.currentTime);
+    delete ambSounds[type];
+    delete ambNodes[type];
+    btn.textContent='▶ Play';
+    btn.classList.remove('primary');
+    return;
+  }
+  
+  const source=ctx.createBufferSource();
+  source.buffer=createNoise(type);
+  source.loop=true;
+  
+  const filter=getFilter(type);
+  const gain=ctx.createGain();
+  const slider=document.querySelector(`#amb-${type} input`);
+  gain.gain.value=(slider?slider.value/100:0.5)*0.4;
+  
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  source.start();
+  
+  ambSounds[type]=source;
+  ambNodes[type]=gain;
+  btn.textContent='⏹ Stop';
+  btn.classList.add('primary');
+}
+
+function setAmbVol(type,val){
+  if(ambNodes[type]){
+    const ctx=getACtx();
+    ambNodes[type].gain.setValueAtTime((val/100)*0.4,ctx.currentTime);
+  }
 }
 init();
 </script>
