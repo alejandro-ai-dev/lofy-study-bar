@@ -1128,85 +1128,40 @@ if(compactOn){
 const ambSounds={};
 const ambNodes={};
 
-function getACtx(){
-  if(!aCtx)aCtx=new(window.AudioContext||window.webkitAudioContext)();
-  return aCtx;
-}
-
-function createNoise(type){
-  const ctx=getACtx();
-  const bufSize=ctx.sampleRate*2;
-  const buf=ctx.createBuffer(1,bufSize,ctx.sampleRate);
-  const data=buf.getChannelData(0);
-  
-  if(type==='rain'){
-    for(let i=0;i<bufSize;i++)data[i]=(Math.random()*2-1)*0.8;
-  } else if(type==='cafe'){
-    let b0=0;
-    for(let i=0;i<bufSize;i++){b0=0.99*b0+0.01*(Math.random()*2-1);data[i]=b0*3.5;}
-  } else if(type==='fire'){
-    let b=0;
-    for(let i=0;i<bufSize;i++){b=0.995*b+0.005*(Math.random()*2-1);data[i]=b*4;}
-  } else if(type==='forest'){
-    for(let i=0;i<bufSize;i++)data[i]=(Math.random()*2-1)*0.3;
-  }
-  return buf;
-}
-
-function getFilter(type){
-  const ctx=getACtx();
-  const f=ctx.createBiquadFilter();
-  if(type==='rain'){f.type='highpass';f.frequency.value=400;}
-  else if(type==='cafe'){f.type='lowpass';f.frequency.value=800;}
-  else if(type==='fire'){f.type='lowpass';f.frequency.value=300;}
-  else if(type==='forest'){f.type='bandpass';f.frequency.value=600;f.Q.value=0.5;}
-  return f;
-}
+const AMBIENT_URLS = {
+  rain: 'https://cdn.freesound.org/previews/531/531947_3797507-lq.mp3',
+  cafe: 'https://cdn.freesound.org/previews/760/760950_11861866-lq.mp3',
+  fire: 'https://cdn.freesound.org/previews/336/336950_5121236-lq.mp3',
+  forest: 'https://cdn.freesound.org/previews/619/619195_5674468-lq.mp3',
+};
 
 function toggleAmb(type){
-  const ctx=getACtx();
-  if(ctx.state==='suspended')ctx.resume();
-  
   const btn=document.querySelector(`#amb-${type} button`);
-  
   if(ambSounds[type]){
-    ambSounds[type].stop();
-    ambNodes[type].gain.setValueAtTime(0,ctx.currentTime);
+    ambSounds[type].pause();
+    ambSounds[type].currentTime=0;
     delete ambSounds[type];
-    delete ambNodes[type];
     btn.textContent='▶ Play';
     btn.classList.remove('primary');
     return;
   }
-  
-  const source=ctx.createBufferSource();
-  source.buffer=createNoise(type);
-  source.loop=true;
-  
-  const filter=getFilter(type);
-  const gain=ctx.createGain();
+  const audio=new Audio(AMBIENT_URLS[type]);
+  audio.loop=true;
   const slider=document.querySelector(`#amb-${type} input`);
-  gain.gain.value=(slider?slider.value/100:0.5)*0.4;
-  
-  source.connect(filter);
-  filter.connect(gain);
-  gain.connect(ctx.destination);
-  source.start();
-  
-  ambSounds[type]=source;
-  ambNodes[type]=gain;
+  audio.volume=(slider?slider.value/100:0.5);
+  audio.play();
+  ambSounds[type]=audio;
   btn.textContent='⏹ Stop';
   btn.classList.add('primary');
 }
 
 function setAmbVol(type,val){
-  if(ambNodes[type]){
-    const ctx=getACtx();
-    ambNodes[type].gain.setValueAtTime((val/100)*0.4,ctx.currentTime);
-  }
+  if(ambSounds[type]) ambSounds[type].volume=val/100;
 }
+
 init();
 </script>
 <script src="bloque3.js"></script>
 </body>
 </html>
+
