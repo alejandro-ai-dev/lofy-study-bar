@@ -539,6 +539,12 @@ select option{background:#0d0d1a}
 body.grad #bg-layer{background:linear-gradient(-45deg,#0d0d1a,#130d2a,#0a0d1f,#12091e)!important;background-size:400% 400%!important;animation:gradShift 10s ease infinite}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:3px}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+/* ── MUSIC PLAYER ── */
+.music-genre-btn{padding:5px 4px;border-radius:7px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:var(--text-muted);cursor:pointer;font-size:0.72rem;font-family:var(--font-ui);transition:all var(--transition);text-align:center;white-space:nowrap}
+.music-genre-btn:hover{border-color:var(--accent);color:var(--text);background:rgba(124,58,237,0.12)}
+.music-genre-btn.active{background:rgba(124,58,237,0.25);border-color:var(--accent);color:var(--accent2);font-weight:600}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+#music-playing-badge{transition:all var(--transition)}
 </style>
 </head>
 <body>
@@ -765,49 +771,84 @@ body.grad #bg-layer{background:linear-gradient(-45deg,#0d0d1a,#130d2a,#0a0d1f,#1
         <div class="amb-row" id="amb-rain">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
             <span style="font-size:0.82rem">🌧 Lluvia</span>
-            <button class="pomo-btn" style="padding:3px 9px;font-size:0.72rem" onclick="toggleAmb('rain')">▶ Play</button>
+            <button class="pomo-btn" id="amb-btn-rain" style="padding:3px 9px;font-size:0.72rem" onclick="toggleAmb('rain')">▶ Play</button>
           </div>
           <input type="range" min="0" max="100" value="50" oninput="setAmbVol('rain',this.value)">
         </div>
         <div class="amb-row" id="amb-cafe">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
             <span style="font-size:0.82rem">☕ Café</span>
-            <button class="pomo-btn" style="padding:3px 9px;font-size:0.72rem" onclick="toggleAmb('cafe')">▶ Play</button>
+            <button class="pomo-btn" id="amb-btn-cafe" style="padding:3px 9px;font-size:0.72rem" onclick="toggleAmb('cafe')">▶ Play</button>
           </div>
           <input type="range" min="0" max="100" value="50" oninput="setAmbVol('cafe',this.value)">
         </div>
         <div class="amb-row" id="amb-fire">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
             <span style="font-size:0.82rem">🔥 Chimenea</span>
-            <button class="pomo-btn" style="padding:3px 9px;font-size:0.72rem" onclick="toggleAmb('fire')">▶ Play</button>
+            <button class="pomo-btn" id="amb-btn-fire" style="padding:3px 9px;font-size:0.72rem" onclick="toggleAmb('fire')">▶ Play</button>
           </div>
           <input type="range" min="0" max="100" value="50" oninput="setAmbVol('fire',this.value)">
         </div>
         <div class="amb-row" id="amb-forest">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
             <span style="font-size:0.82rem">🌲 Bosque</span>
-            <button class="pomo-btn" style="padding:3px 9px;font-size:0.72rem" onclick="toggleAmb('forest')">▶ Play</button>
+            <button class="pomo-btn" id="amb-btn-forest" style="padding:3px 9px;font-size:0.72rem" onclick="toggleAmb('forest')">▶ Play</button>
           </div>
           <input type="range" min="0" max="100" value="50" oninput="setAmbVol('forest',this.value)">
+        </div>
+        <div class="amb-row" id="amb-ocean">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:0.82rem">🌊 Océano</span>
+            <button class="pomo-btn" id="amb-btn-ocean" style="padding:3px 9px;font-size:0.72rem" onclick="toggleAmb('ocean')">▶ Play</button>
+          </div>
+          <input type="range" min="0" max="100" value="50" oninput="setAmbVol('ocean',this.value)">
+        </div>
+        <div class="amb-row" id="amb-white">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:0.82rem">📡 Ruido blanco</span>
+            <button class="pomo-btn" id="amb-btn-white" style="padding:3px 9px;font-size:0.72rem" onclick="toggleAmb('white')">▶ Play</button>
+          </div>
+          <input type="range" min="0" max="100" value="50" oninput="setAmbVol('white',this.value)">
         </div>
       </div>
     </div>
   </div>
 
-  <!-- WIDGET: MÚSICA -->
-  <div class="float-widget" id="fw-player" style="display:none;top:380px;left:900px">
+  <!-- WIDGET: MÚSICA (reproductor incorporado) -->
+  <div class="float-widget" id="fw-player" style="display:none;top:380px;left:900px;width:320px;max-width:360px">
     <div class="fw-header" onmousedown="startDragFW(event,'fw-player')">
-      <span class="fw-title">🎵 Playlists Lofi</span>
-      <button class="fw-close" onclick="toggleFW('fw-player')">✕</button>
+      <span class="fw-title" id="music-widget-title">🎵 Música de Fondo</span>
+      <button class="fw-close" onclick="stopMusic();toggleFW('fw-player')">✕</button>
     </div>
-    <div class="fw-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-        <button class="pomo-btn" onclick="openPL('https://youtube.com/results?search_query=lofi+hip+hop+radio+study')">🎵 Lo-fi</button>
-        <button class="pomo-btn" onclick="openPL('https://youtube.com/results?search_query=synthwave+beats+study')">🌆 Synthwave</button>
-        <button class="pomo-btn" onclick="openPL('https://youtube.com/results?search_query=jazz+cafe+study+music')">🎷 Jazz</button>
-        <button class="pomo-btn" onclick="openPL('https://youtube.com/results?search_query=dark+academia+music+playlist')">📚 Academia</button>
-        <button class="pomo-btn" onclick="openPL('https://youtube.com/results?search_query=night+city+ambient+cyberpunk+music')">🌃 Night City</button>
-        <button class="pomo-btn" onclick="openPL('https://youtube.com/results?search_query=rain+sounds+study+white+noise')">🌧 Rain</button>
+    <div class="fw-body" style="padding:0;overflow:hidden">
+      <!-- Embedded YouTube Player -->
+      <div style="position:relative;width:100%;padding-bottom:50%;background:rgba(0,0,0,0.5);overflow:hidden;min-height:130px">
+        <iframe id="yt-iframe"
+          style="position:absolute;top:0;left:0;width:100%;height:100%;border:none"
+          allow="autoplay;encrypted-media;picture-in-picture"
+          allowfullscreen></iframe>
+        <div id="music-empty-state" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text-muted);pointer-events:none">
+          <span style="font-size:2.2rem">🎵</span>
+          <span style="font-size:0.75rem">Elige un género para empezar</span>
+        </div>
+      </div>
+      <div style="padding:12px">
+        <!-- Genre Buttons -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:10px">
+          <button class="music-genre-btn" data-genre="lofi" onclick="playGenre('lofi')">🎵 Lo-fi</button>
+          <button class="music-genre-btn" data-genre="synthwave" onclick="playGenre('synthwave')">🌆 Synth</button>
+          <button class="music-genre-btn" data-genre="jazz" onclick="playGenre('jazz')">🎷 Jazz</button>
+          <button class="music-genre-btn" data-genre="classical" onclick="playGenre('classical')">🎻 Clásica</button>
+          <button class="music-genre-btn" data-genre="chillhop" onclick="playGenre('chillhop')">🌿 Chill</button>
+          <button class="music-genre-btn" data-genre="ambient" onclick="playGenre('ambient')">🌌 Ambient</button>
+        </div>
+        <!-- Custom URL -->
+        <div style="display:flex;gap:5px;margin-bottom:8px">
+          <input id="custom-yt-url" class="task-input" placeholder="Pega URL de YouTube..." style="flex:1;font-size:0.74rem;padding:5px 9px" onkeydown="if(event.key==='Enter')playCustomURL()">
+          <button class="pomo-btn" onclick="playCustomURL()" style="padding:5px 10px;font-size:0.8rem" title="Reproducir URL">▶</button>
+        </div>
+        <!-- Stop button -->
+        <button id="music-stop-btn" class="pomo-btn" onclick="stopMusic()" style="width:100%;display:none;font-size:0.78rem;margin-top:2px">⏹ Detener música</button>
       </div>
     </div>
   </div>
@@ -1663,37 +1704,32 @@ const AMB_SOURCES={
   rain: 'https://assets.mixkit.co/active_storage/sfx/2515/2515-preview.mp3',
   cafe: 'https://assets.mixkit.co/active_storage/sfx/2516/2516-preview.mp3',
   fire: 'https://assets.mixkit.co/active_storage/sfx/1213/1213-preview.mp3',
-  forest: 'https://assets.mixkit.co/active_storage/sfx/2517/2517-preview.mp3'
+  forest: 'https://assets.mixkit.co/active_storage/sfx/2517/2517-preview.mp3',
+  ocean: '',
+  white: ''
 };
 const ambAudios={};
 const ambCtx={};
 
 function toggleAmb(id){
+  // ocean and white use Web Audio API only (no external URL)
+  if(id==='ocean'||id==='white'){
+    const btn=document.getElementById('amb-btn-'+id);
+    if(audioCtxMap[id]){
+      stopGeneratedAmb(id);
+      if(btn) btn.textContent='▶ Play';
+    } else {
+      playGeneratedAmb(id);
+      if(btn) btn.textContent='⏸ Stop';
+    }
+    return;
+  }
   if(!ambAudios[id]){
     const a=new Audio();
     a.crossOrigin='anonymous';
     a.loop=true;
     a.volume=0.4;
-    // Múltiples fuentes de fallback
-    const fallbacks={
-      rain:[
-        'https://www.soundjay.com/nature/rain-01.mp3',
-        'https://assets.mixkit.co/active_storage/sfx/2515/2515-preview.mp3'
-      ],
-      cafe:[
-        'https://www.soundjay.com/misc/sounds/coffee-shop-ambience-1.mp3',
-        'https://assets.mixkit.co/active_storage/sfx/2516/2516-preview.mp3'
-      ],
-      fire:[
-        'https://www.soundjay.com/nature/fireplace-01.mp3',
-        'https://assets.mixkit.co/active_storage/sfx/1213/1213-preview.mp3'
-      ],
-      forest:[
-        'https://www.soundjay.com/nature/birds-singing-02.mp3',
-        'https://assets.mixkit.co/active_storage/sfx/2517/2517-preview.mp3'
-      ]
-    };
-    // Usar Web Audio API con oscilador como fallback total
+    // Web Audio API fallback for when external URL fails to load
     a.onerror=()=>{ playGeneratedAmb(id); };
     a.src=AMB_SOURCES[id]||'';
     ambAudios[id]=a;
@@ -1771,6 +1807,36 @@ function playGeneratedAmb(id){
     osc2.connect(g2); g2.connect(gainNode);
     osc1.start(); osc2.start();
     sourceMap[id]={osc1,osc2};
+  } else if(id==='ocean'){
+    // Olas del océano — ruido rosa (Pink Noise) con filtro bandpass
+    // Algoritmo de aproximación de Paul Kellett para ruido rosa
+    const bufferSize=ctx.sampleRate*3;
+    const buffer=ctx.createBuffer(1,bufferSize,ctx.sampleRate);
+    const data=buffer.getChannelData(0);
+    let b0=0,b1=0,b2=0;
+    for(let i=0;i<bufferSize;i++){
+      const white=Math.random()*2-1;
+      b0=0.99886*b0+white*0.0555179;
+      b1=0.99332*b1+white*0.0750759;
+      b2=0.96900*b2+white*0.1538520;
+      data[i]=(b0+b1+b2+white*0.5362)*0.11;
+    }
+    const src=ctx.createBufferSource();
+    src.buffer=buffer; src.loop=true;
+    const filter=ctx.createBiquadFilter();
+    filter.type='bandpass'; filter.frequency.value=300; filter.Q.value=0.5;
+    src.connect(filter); filter.connect(gainNode); src.start();
+    sourceMap[id]=src;
+  } else if(id==='white'){
+    // Ruido blanco puro
+    const bufferSize=ctx.sampleRate*2;
+    const buffer=ctx.createBuffer(1,bufferSize,ctx.sampleRate);
+    const data=buffer.getChannelData(0);
+    for(let i=0;i<bufferSize;i++) data[i]=Math.random()*2-1;
+    const src=ctx.createBufferSource();
+    src.buffer=buffer; src.loop=true;
+    src.connect(gainNode); src.start();
+    sourceMap[id]=src;
   }
 }
 
@@ -1795,9 +1861,107 @@ function setAmbVol(id,v){
 }
 
 // ══════════════════════════════════════════
-// MÚSICA / PLAYER
+// MÚSICA INCORPORADA
 // ══════════════════════════════════════════
-function openPL(url){ window.open(url,'_blank'); }
+const MUSIC_GENRES = {
+  lofi:      { id: 'jfKfPfyJRdk', label: '🎵 Lo-fi Beats' },
+  synthwave: { id: '4xDzrJKXOOY', label: '🌆 Synthwave' },
+  jazz:      { id: 'Dx5qFachd3A', label: '🎷 Jazz Cafe' },
+  classical: { id: 'mF4Fv3V3AqE', label: '🎻 Clásica' },
+  chillhop:  { id: '36YnV9STBqc', label: '🌿 Chillhop' },
+  ambient:   { id: 'lFcSrYw-ARY', label: '🌌 Ambient' }
+};
+
+function playGenre(genre) {
+  const g = MUSIC_GENRES[genre];
+  if (!g) return;
+  const iframe = document.getElementById('yt-iframe');
+  const emptyState = document.getElementById('music-empty-state');
+  const stopBtn = document.getElementById('music-stop-btn');
+  if (iframe) iframe.src = `https://www.youtube.com/embed/${g.id}?autoplay=1&rel=0`;
+  if (emptyState) emptyState.style.display = 'none';
+  if (stopBtn) stopBtn.style.display = 'block';
+  const title = document.getElementById('music-widget-title');
+  if (title) title.textContent = g.label;
+  document.querySelectorAll('.music-genre-btn').forEach(b =>
+    b.classList.toggle('active', b.getAttribute('data-genre') === genre)
+  );
+  updateMusicBadge(g.label);
+  LSS('musicGenre', genre);
+}
+
+function stopMusic() {
+  const iframe = document.getElementById('yt-iframe');
+  const emptyState = document.getElementById('music-empty-state');
+  const stopBtn = document.getElementById('music-stop-btn');
+  if (iframe) iframe.src = '';
+  if (emptyState) emptyState.style.display = 'flex';
+  if (stopBtn) stopBtn.style.display = 'none';
+  const title = document.getElementById('music-widget-title');
+  if (title) title.textContent = '🎵 Música de Fondo';
+  document.querySelectorAll('.music-genre-btn').forEach(b => b.classList.remove('active'));
+  updateMusicBadge(null);
+  LSS('musicGenre', '');
+}
+
+function playCustomURL() {
+  const val = (document.getElementById('custom-yt-url') || {}).value || '';
+  const v = val.trim();
+  if (!v) return;
+  let embedSrc = '';
+  const m = v.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+  if (m) {
+    embedSrc = `https://www.youtube.com/embed/${m[1]}?autoplay=1&rel=0`;
+  } else if (v.includes('youtube.com/embed/')) {
+    embedSrc = v.includes('autoplay') ? v : v + (v.includes('?') ? '&' : '?') + 'autoplay=1';
+  } else {
+    alert('Por favor ingresa una URL válida de YouTube.\nFormatos aceptados:\n• youtube.com/watch?v=VIDEO_ID\n• youtu.be/VIDEO_ID\n• youtube.com/embed/VIDEO_ID');
+    return;
+  }
+  const iframe = document.getElementById('yt-iframe');
+  const emptyState = document.getElementById('music-empty-state');
+  const stopBtn = document.getElementById('music-stop-btn');
+  if (iframe) iframe.src = embedSrc;
+  if (emptyState) emptyState.style.display = 'none';
+  if (stopBtn) stopBtn.style.display = 'block';
+  const title = document.getElementById('music-widget-title');
+  if (title) title.textContent = '🎵 Personalizado';
+  document.querySelectorAll('.music-genre-btn').forEach(b => b.classList.remove('active'));
+  updateMusicBadge('🎵 Personalizado');
+  LSS('musicGenre', 'custom:' + v);
+}
+
+function updateMusicBadge(label) {
+  let badge = document.getElementById('music-playing-badge');
+  if (!label) {
+    if (badge) badge.remove();
+    return;
+  }
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'music-playing-badge';
+    badge.style.cssText = 'display:flex;align-items:center;gap:5px;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);border-radius:20px;padding:3px 10px;font-size:0.72rem;color:var(--accent2);cursor:pointer;user-select:none';
+    badge.title = 'Clic para abrir reproductor de música';
+    badge.onclick = () => { if(document.getElementById('fw-player').style.display==='none') toggleFW('fw-player'); };
+    const topRight = document.querySelector('.topbar-right');
+    if (topRight) topRight.insertBefore(badge, topRight.firstChild);
+  }
+  badge.innerHTML = `<span style="width:6px;height:6px;background:var(--accent2);border-radius:50%;animation:pulse 1.5s infinite;flex-shrink:0;display:inline-block"></span> ${label}`;
+}
+
+function restoreMusic() {
+  const saved = LS('musicGenre');
+  if (!saved) return;
+  if (saved.startsWith('custom:')) {
+    const url = saved.slice(7);
+    const inp = document.getElementById('custom-yt-url');
+    if (inp) inp.value = url;
+    // Auto-play is intentionally skipped on restore for custom URLs
+    // to avoid unexpected autoplay on page load; user can click ▶ to resume
+  } else if (MUSIC_GENRES[saved]) {
+    playGenre(saved);
+  }
+}
 
 // ══════════════════════════════════════════
 // CITAS DEL DÍA
@@ -2181,6 +2345,7 @@ function restorePrefs(){
   loadQuote();
   renderTopMode();
   setTopMode(topMode);
+  restoreMusic();
   // Asegurar que el input file tiene el evento onchange
   const bfInput=document.getElementById('bg-file-input');
   if(bfInput && !bfInput.onchange) bfInput.onchange=function(){handleBgUpload(this);};
